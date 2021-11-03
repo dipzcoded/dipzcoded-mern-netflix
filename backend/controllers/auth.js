@@ -5,8 +5,9 @@ import {
   generateRefreshToken,
   checkUserLogin,
   removeUserRefreshTokens,
+  checkTokenAvaliable,
 } from "../utlis/auth.js";
-
+import jwt from "jsonwebtoken";
 // create user account
 export const register = asyncHandler(async (req, res) => {
   let user;
@@ -72,14 +73,31 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  if (await checkUserLogin(req.user._id)) {
-    removeUserRefreshTokens(req.user._id);
-    res.json({
-      status: "success",
-      msg: "refresh token deleted succesfully",
-    });
+  const { refreshToken } = req.body;
+  if (
+    refreshToken &&
+    String(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET).id) ===
+      String(req.user._id)
+  ) {
+    if (
+      (await checkUserLogin(req.user._id)) &&
+      (await checkTokenAvaliable(refreshToken))
+    ) {
+      removeUserRefreshTokens(refreshToken);
+      return res.json({
+        status: "success",
+        msg: "refresh token deleted succesfully",
+      });
+    } else {
+      res.status(403);
+      throw new Error(
+        "you need to be logged in before you can perform this func or token invalid"
+      );
+    }
   } else {
-    res.status(403);
-    throw new Error("cant remove token when u have not logged in yet");
+    res.status(404);
+    throw new Error(
+      "refresh token not valid or not passed as data to the body"
+    );
   }
 });

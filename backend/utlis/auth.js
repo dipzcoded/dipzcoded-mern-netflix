@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 // redis init
 const redisClient = redis.createClient();
 
-export const removeUserRefreshTokens = (userId) => {
+export const removeUserRefreshTokens = (userToken) => {
   redisClient.get("refreshTokens", (err, tokens) => {
     if (err) throw new Error(err.message);
     if (tokens != null) {
@@ -12,9 +12,9 @@ export const removeUserRefreshTokens = (userId) => {
       refreshTokens = refreshTokens.filter(
         (token) =>
           String(jwt.verify(token, process.env.JWT_REFRESH_SECRET).id) !==
-          String(userId)
+          String(jwt.verify(userToken, process.env.JWT_REFRESH_SECRET).id)
       );
-      refreshTokens.push(token);
+
       redisClient.set("refreshTokens", JSON.stringify(refreshTokens));
     }
   });
@@ -49,16 +49,38 @@ export const checkUserLogin = (userId) => {
   });
 };
 
-const saveRefreshTokenToCache = (token, userId) => {
+export const checkTokenAvaliable = (userToken) => {
+  return new Promise((resolve, reject) => {
+    redisClient.get("refreshTokens", (err, token) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (token == null) {
+        resolve(false);
+        return;
+      } else {
+        const refreshTokens = JSON.parse(token);
+        const tokenUserFound = refreshTokens.find(
+          (token) => String(token) === String(userToken)
+        );
+
+        if (tokenUserFound) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }
+    });
+  });
+};
+
+const saveRefreshTokenToCache = (token) => {
   redisClient.get("refreshTokens", (err, tokens) => {
     if (err) throw new Error(err.message);
     if (tokens != null) {
       let refreshTokens = JSON.parse(tokens);
-      refreshTokens = refreshTokens.filter(
-        (token) =>
-          String(jwt.verify(token, process.env.JWT_REFRESH_SECRET).id) !==
-          String(userId)
-      );
       refreshTokens.push(token);
       redisClient.set("refreshTokens", JSON.stringify(refreshTokens));
     } else {
@@ -93,7 +115,7 @@ export const generateRefreshToken = (user) => {
     }
   );
 
-  saveRefreshTokenToCache(token, user._id);
+  saveRefreshTokenToCache(token);
 
   return token;
 };
