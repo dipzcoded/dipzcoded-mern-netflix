@@ -4,11 +4,14 @@ import {
   createFilmList,
   removeFilmFromListContents,
   getFilmList,
+  getListById,
 } from "../../controllers/list.js";
 import { authMiddleware } from "../../middlewares/auth.js";
 const router = express.Router();
 router.route("/").get(getFilmList);
+router.route("/:id").get(getListById);
 router.use(authMiddleware);
+
 router.route("/").post(createFilmList);
 router.route("/:id/:filmId/add").patch(addFilmToListContents);
 router.route("/:id/:filmId/remove").patch(removeFilmFromListContents);

@@ -11,8 +11,8 @@ import jwt from "jsonwebtoken";
 // create user account
 export const register = asyncHandler(async (req, res) => {
   let user;
-  const { username, email, password } = req.body;
-  user = await userModel.findOne({ username });
+  const { userName, email, password } = req.body;
+  user = await userModel.findOne({ username: userName });
 
   if (user) {
     res.status(403);
@@ -26,19 +26,14 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   user = await userModel.create({
-    username,
+    username: userName,
     email,
     password,
   });
 
   res.json({
     status: "success",
-    user: {
-      username: user.username,
-      email: user.email,
-      profilePic: user.profilePic,
-      isAdmin: user.isAdmin,
-    },
+    msg: "register successfully!",
   });
 });
 
@@ -87,6 +82,38 @@ export const logout = asyncHandler(async (req, res) => {
       return res.json({
         status: "success",
         msg: "refresh token deleted succesfully",
+      });
+    } else {
+      res.status(403);
+      throw new Error(
+        "you need to be logged in before you can perform this func or token invalid"
+      );
+    }
+  } else {
+    res.status(404);
+    throw new Error(
+      "refresh token not valid or not passed as data to the body"
+    );
+  }
+});
+
+export const newRefreshTokenGen = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (refreshToken) {
+    const user = String(
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET).id
+    );
+
+    if (
+      (await checkUserLogin(user)) &&
+      (await checkTokenAvaliable(refreshToken))
+    ) {
+      removeUserRefreshTokens(refreshToken);
+
+      return res.json({
+        status: "success",
+        accessToken: generateAccessToken(user),
+        refreshToken: generateRefreshToken(user),
       });
     } else {
       res.status(403);

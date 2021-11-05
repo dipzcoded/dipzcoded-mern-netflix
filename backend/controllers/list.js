@@ -32,6 +32,26 @@ export const getFilmList = asyncHanlder(async (req, res) => {
   });
 });
 
+export const getListById = asyncHanlder(async (req, res) => {
+  const { id: listId } = req.params;
+
+  if (listId) {
+    const list = await listModel.findById(listId);
+    if (list) {
+      return res.json({
+        status: "success",
+        list,
+      });
+    } else {
+      res.status(404);
+      throw new Error("list not found!");
+    }
+  } else {
+    res.status(400);
+    throw new Error("Invalid Id or id not passed as paramater in the url");
+  }
+});
+
 export const createFilmList = asyncHanlder(async (req, res) => {
   if (req.user.isAdmin) {
     const { title, type, genre } = req.body;
@@ -53,17 +73,42 @@ export const createFilmList = asyncHanlder(async (req, res) => {
 
 export const addFilmToListContents = asyncHanlder(async (req, res) => {
   const { id: listId, filmId } = req.params;
+  let type;
 
   if (req.user.isAdmin) {
     if (listId) {
       const list = await listModel.findById(listId);
       const film = await movieModel.findById(filmId);
       if (list && film) {
+        type = film.isSeries ? "series" : "movies";
         if (list.contents.length > 0) {
           const listFound = list.contents.find(
-            (id) => String(id) === String(filmId)
+            (el) => String(el._id) === String(film._id)
           );
-          if (!listFound && list.genre.includes(film.genre)) {
+
+          if (!listFound && film.genre.includes(list.genre)) {
+            if (String(list.type) === String(type)) {
+              list.contents.push(film._id);
+              await list.save();
+              return res.json({
+                status: "success",
+                list,
+              });
+            } else {
+              res.status(400);
+              throw new Error("the list type is not the same with the film");
+            }
+          } else {
+            res.status(400);
+            throw new Error(
+              "film has been added to the contents field or film genre is not similar to the list genre"
+            );
+          }
+        } else {
+          if (
+            String(list.type) === String(type) &&
+            film.genre.includes(list.genre)
+          ) {
             list.contents.push(film._id);
             await list.save();
             return res.json({
@@ -72,17 +117,8 @@ export const addFilmToListContents = asyncHanlder(async (req, res) => {
             });
           } else {
             res.status(400);
-            throw new Error(
-              "film has been added to the contents field or film genre is not similar to the list genre"
-            );
+            throw new Error("the list type is not the same with the film");
           }
-        } else {
-          list.contents.push(filmId);
-          await list.save();
-          return res.json({
-            status: "success",
-            list,
-          });
         }
       } else {
         res.status(404);
@@ -108,11 +144,11 @@ export const removeFilmFromListContents = asyncHanlder(async (req, res) => {
       if (list && film) {
         if (list.contents.length > 0) {
           const filmFound = list.contents.find(
-            (id) => String(id) === String(filmId)
+            (el) => String(el._id) === String(filmId)
           );
           if (filmFound) {
             list.contents = list.contents.filter(
-              (el) => String(el) !== String(filmFound._id)
+              (el) => String(el._id) !== String(filmFound._id)
             );
             await list.save();
             return res.json({

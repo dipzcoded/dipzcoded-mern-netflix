@@ -1,24 +1,28 @@
-import logo from './logo.svg';
-import './App.css';
-
+import { useEffect } from "react";
+import "./app.scss";
+import MainLayout from "./MainLayout";
+import { generateNewFreshToken } from "./actions/auth";
+import { useSelector, useDispatch } from "react-redux";
+import jwtDecode from "jwt-decode";
 function App() {
+  // dispatch init
+  const dispatch = useDispatch();
+
+  const { userData } = useSelector((state) => state.authLogin);
+
+  useEffect(() => {
+    if (userData && userData?.user) {
+      let currentDate = new Date();
+      const decodedToken = jwtDecode(userData?.accessToken);
+      if (decodedToken.exp * 1000 < currentDate.getTime()) {
+        dispatch(generateNewFreshToken());
+      }
+    }
+  }, [userData, dispatch]);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <MainLayout />
+    </>
   );
 }
 

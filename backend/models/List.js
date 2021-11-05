@@ -20,5 +20,10 @@ const listSchema = new mongoose.Schema({
   ],
 });
 
+listSchema.pre(/^find/, function (next) {
+  this.populate({ path: "contents" });
+  next();
+});
+
 const listModel = mongoose.model("List", listSchema);
 export default listModel;
