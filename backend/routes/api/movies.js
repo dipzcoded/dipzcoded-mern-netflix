@@ -11,9 +11,9 @@ import {
 import { authMiddleware } from "../../middlewares/auth.js";
 const router = express.Router();
 
+router.use(authMiddleware);
 router.route("/random").get(getRandomFilm);
 router.route("/:id").get(getFilm);
-router.use(authMiddleware);
 router.route("/").get(getFilms);
 router.route("/all").get(getAllFilms);
 router.route("/").post(createFilm);

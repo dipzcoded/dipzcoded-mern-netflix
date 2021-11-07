@@ -2,12 +2,18 @@ import asyncHanlder from "express-async-handler";
 import movieModel from "../models/Movie.js";
 
 export const getFilms = asyncHanlder(async (req, res) => {
-  const { type } = req.query;
+  const { type, search } = req.query;
+  let films;
   if (req.user.isAdmin) {
-    const films =
+    films =
       type && type === "series"
         ? await movieModel.find({ isSeries: { $eq: true } })
         : await movieModel.find({ isSeries: { $ne: true } });
+    films = search
+      ? films.filter((el) =>
+          el.title.toLowerCase().includes(search.toLowerCase())
+        )
+      : films;
     res.json({
       status: "success",
       results: films.length,
@@ -45,7 +51,6 @@ export const getRandomFilm = asyncHanlder(async (req, res) => {
         : await movieModel.find({ isSeries: { $ne: true } });
     randNum = Math.floor(Math.random() * films.length);
     const film = films.find((film, indexes) => indexes === randNum);
-    console.log(film, randNum, films.length);
     res.json({
       status: "success",
       film,
@@ -83,6 +88,7 @@ export const getFilm = asyncHanlder(async (req, res) => {
 export const createFilm = asyncHanlder(async (req, res) => {
   if (req.user.isAdmin) {
     const newMovie = await movieModel.create({ ...req.body });
+
     res.status(201);
     res.json({
       status: "success",

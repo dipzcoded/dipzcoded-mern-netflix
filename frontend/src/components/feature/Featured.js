@@ -1,7 +1,17 @@
+import { useEffect } from "react";
 import { InfoOutlined, PlayArrow } from "@material-ui/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { getRandomFilm } from "../../actions/film";
 import "./featured.scss";
 
 export default function Featured({ type }) {
+  // dispatch init
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getRandomFilm(type));
+  }, [dispatch, type]);
+
   return (
     <div className="featured">
       {type && (

@@ -8,23 +8,17 @@ export const getFilmList = asyncHanlder(async (req, res) => {
   console.log(genreQuery);
   if (type) {
     if (genreQuery) {
-      resData = await listModel.aggregate([
-        { $sample: { size: 10 } },
-        { $match: { type } },
-      ]);
+      resData = await listModel.find({ type: { $in: type } });
+
       resData = resData.filter((el) => el.genre.includes(genreQuery));
+      resData = resData.sort(() => Math.random() - 0.5).slice(0, 10);
     } else {
-      resData = await listModel.aggregate([
-        { $sample: { size: 10 } },
-        { $match: { type } },
-      ]);
+      resData = await listModel.find({ type: { $in: type } });
+      resData = resData.sort(() => Math.random() - 0.5).slice(0, 10);
     }
   } else {
-    resData = await listModel.aggregate([
-      {
-        $sample: { size: 10 },
-      },
-    ]);
+    resData = await listModel.find();
+    resData = resData.sort(() => Math.random() - 0.5).slice(0, 10);
   }
   res.json({
     status: "success",

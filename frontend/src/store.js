@@ -11,12 +11,18 @@ import {
   generateNewRefreshTokenReducer,
 } from "./reducers/auth";
 
+import { getFilmListReducer } from "./reducers/list";
+
+import { getRandomFilmReducer } from "./reducers/film";
+
 // reducers
 const reducers = combineReducers({
   authRegister: authRegisterReducer,
   authLogin: authLoginReducer,
   authLogout: authLogoutReducer,
   generateNewRefreshToken: generateNewRefreshTokenReducer,
+  getFilmList: getFilmListReducer,
+  getRandomFilm: getRandomFilmReducer,
 });
 
 // get data from cookie
